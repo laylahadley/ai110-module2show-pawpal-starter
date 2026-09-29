@@ -1,14 +1,16 @@
 from dataclasses import dataclass, field
+from datetime import date, datetime
+from typing import Optional
 
 
 @dataclass
 class Task:
     description: str
-    category: str
-    time: str
-    duration_minutes: int
-    priority: str
-    frequency: str
+    category: str  # feeding, walk, medication, appointment
+    time: datetime  # full date + time the task starts
+    duration_minutes: int = 15  # used for overlap detection
+    priority: str = "medium"  # low, medium, high
+    frequency: str = "once"  # once, daily, weekly
     completed: bool = False
 
     def mark_complete(self) -> None:
@@ -19,17 +21,17 @@ class Task:
 class Pet:
     name: str
     species: str
-    age: int
+    age: int = 0
     tasks: list[Task] = field(default_factory=list)
 
     def add_task(self, task: Task) -> None:
         pass
 
 
+@dataclass
 class Owner:
-    def __init__(self, name: str, pets: list[Pet] | None = None) -> None:
-        self.name = name
-        self.pets = pets if pets is not None else []
+    name: str
+    pets: list[Pet] = field(default_factory=list)
 
     def add_pet(self, pet: Pet) -> None:
         pass
@@ -39,14 +41,18 @@ class Owner:
 
 
 class Scheduler:
-    def __init__(self, owner: Owner) -> None:
+    def __init__(self, owner: Owner):
         self.owner = owner
 
-    def get_todays_tasks(self) -> list[Task]:
+    def get_todays_tasks(self, today: Optional[date] = None) -> list[Task]:
+        """Tasks from the owner's pets that fall on `today` (defaults to the current date)."""
         pass
 
-    def sort_by_time(self, tasks: list[Task]) -> list[Task]:
+    def sort_by_time(self, tasks: Optional[list[Task]] = None) -> list[Task]:
+        """Sort by time. If no list is given, use all of the owner's tasks."""
         pass
 
-    def find_conflicts(self, tasks: list[Task]) -> list[Task]:
+    def find_conflicts(self) -> list[tuple[Task, Task]]:
+        """Return pairs of the owner's tasks whose time windows overlap."""
         pass
+    

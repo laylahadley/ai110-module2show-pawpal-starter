@@ -13,11 +13,19 @@ Three core actions a user should be able to perform:
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
 
+    - My initial design has four classes. Task is a dataclass holding one care activity (description, category, time, duration, priority, frequency, completed) and can mark itself complete. Pet is a dataclass holding the pet's basic info and its list of tasks. Owner holds the owner's name and their pets and can gather every task across all pets. Scheduler takes an Owner and is responsible for the logic: getting today's tasks, sorting by time, and detecting conflicts.
+
 **b. Design changes**
 
 - Did your design change during implementation?
 - If yes, describe at least one change and why you made it.
 
+    - After asking the AI to review my skeleton, I made these changes:
+        - Changed Task.time from a string to a datetime. Strings like "9:00" and "10:00" sort incorrectly and can't be used to detect overlaps. A datetime also carries the date, which get_todays_tasks() needs.
+        - Made Scheduler.sort_by_time() and find_conflicts() work from self.owner.get_all_tasks() by default, so the Scheduler has one source of truth for tasks.
+        - Changed find_conflicts() to return pairs of tasks, so it's clear which tasks conflict.
+        
+        I decided not to add owner constraints (like available time or preferences) yet. The scheduler doesn't enforce them, so adding them now would be unnecessary complexity. I can add them later if the scheduling logic needs them.
 ---
 
 ## 2. Scheduling Logic and Tradeoffs
