@@ -92,3 +92,22 @@ Describe your app in numbered steps so a reader can follow along without watchin
 5. <!-- Add more steps as needed -->
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->
+
+
+## Sample output
+
+
+```
+====================================================
+Today's Schedule for Jordan
+====================================================
+[ ] 07:30 AM  Morning walk     Buddy   30 min  (high)
+[ ] 08:00 AM  Breakfast        Buddy   15 min  (high)
+[ ] 08:10 AM  Flea medication  Mochi    5 min  (medium)
+[ ] 02:00 PM  Vet appointment  Mochi   60 min  (high)
+
+Conflicts detected:
+  ! Breakfast (Buddy) overlaps Flea medication (Mochi)
+
+  ```
+  
