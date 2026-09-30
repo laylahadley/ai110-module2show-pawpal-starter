@@ -1,5 +1,21 @@
 from datetime import datetime, timedelta
+
 from pawpal_system import Owner, Pet, Scheduler, Task
+
+
+def show(title: str, tasks: list[Task], scheduler: Scheduler) -> None:
+    """Print a titled list of tasks."""
+    print(f"\n{title}")
+    print("-" * 60)
+    if not tasks:
+        print("  (none)")
+        return
+    for t in tasks:
+        mark = "x" if t.completed else " "
+        print(
+            f"[{mark}] {t.time:%m/%d %I:%M %p}  {t.description:<16} "
+            f"{scheduler.pet_name_for(t):<6} {t.frequency}"
+        )
 
 
 def main() -> None:
@@ -17,39 +33,41 @@ def main() -> None:
     owner.add_pet(buddy)
     owner.add_pet(mochi)
 
-    # Added out of order on purpose, toshow that sorting works
+    # Added out of order on purpose. Vitamins and breakfast start at the same time.
     mochi.add_task(Task("Vet appointment", "appointment", at(14, 0), 60, "high"))
-    buddy.add_task(Task("Breakfast", "feeding", at(8, 0), 15, "high"))
-    buddy.add_task(Task("Morning walk", "walk", at(7, 30), 30, "high"))
-    mochi.add_task(Task("Flea medication", "medication", at(8, 10), 5, "medium"))
+    buddy.add_task(Task("Breakfast", "feeding", at(8, 0), 15, "high", "daily"))
+    buddy.add_task(Task("Morning walk", "walk", at(7, 30), 30, "high", "daily"))
+    mochi.add_task(Task("Flea medication", "medication", at(8, 10), 5, "medium", "weekly"))
+    mochi.add_task(Task("Vitamins", "medication", at(8, 0), 5, "low"))
     buddy.add_task(Task("Grooming", "appointment", at(10, 0, day_offset=1), 45, "low"))
 
     scheduler = Scheduler(owner)
 
-    # Task has no pet field, so build a lookup for printing
-    pet_of = {id(task): pet.name for pet in owner.pets for task in pet.tasks}
+    # Sorting
+    show("All tasks, sorted by time", scheduler.sort_by_time(), scheduler)
 
-    print("=" * 52)
-    print(f"Today's Schedule for {owner.name}")
-    print("=" * 52)
-    for task in scheduler.get_todays_tasks():
-        mark = "x" if task.completed else " "
-        print(
-            f"[{mark}] {task.time:%I:%M %p}  {task.description:<16} "
-            f"{pet_of[id(task)]:<6} {task.duration_minutes:>3} min  ({task.priority})"
-        )
+    # Filtering
+    show("Buddy's tasks only", scheduler.filter_tasks(pet_name="Buddy"), scheduler)
+    show("Unfinished tasks", scheduler.filter_tasks(completed=False), scheduler)
 
-    conflicts = scheduler.find_conflicts()
-    print()
-    if conflicts:
-        print("Conflicts detected:")
-        for first, second in conflicts:
-            print(
-                f"  ! {first.description} ({pet_of[id(first)]}) overlaps "
-                f"{second.description} ({pet_of[id(second)]})"
-            )
+    # Conflict detection (Breakfast and vitamins share a start time)
+    print("\nConflict check")
+    print("-" * 60)
+    warnings = scheduler.get_conflict_warnings()
+    if warnings:
+        for warning in warnings:
+            print(f"  ! {warning}")
     else:
-        print("No conflicts.")
+        print("  No conflicts.")
+
+    # Recurring tasks
+    walk = next(t for t in buddy.tasks if t.description == "Morning walk")
+    next_walk = scheduler.mark_task_complete(walk)
+    print(f"\nMarked '{walk.description}' complete.")
+    if next_walk:
+        print(f"Next occurrence created for {next_walk.time:%m/%d %I:%M %p}.")
+    show("Completed tasks", scheduler.filter_tasks(completed=True), scheduler)
+    show("Buddy's tasks after completing the walk", scheduler.filter_tasks(pet_name="Buddy"), scheduler)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime, timedelta
 from typing import Optional
+
 
 
 @dataclass
@@ -46,34 +47,72 @@ class Owner:
 
 class Scheduler:
     def __init__(self, owner: Owner):
-        """Create a scheduler for an owner."""
+        """Initialize the scheduler with an owner."""
         self.owner = owner
 
+    def pet_name_for(self, task: Task) -> str:
+        """Return the name of the pet that owns `task` ('?' if none does)."""
+        for pet in self.owner.pets:
+            if any(t is task for t in pet.tasks):
+                return pet.name
+        return "?"
+
     def get_todays_tasks(self, today: Optional[date] = None) -> list[Task]:
-        """Tasks from the owner's pets that fall on `today` (defaults to the current date)."""
-        selected_date = today if today is not None else date.today()
-        tasks = [task for task in self.owner.get_all_tasks() if task.time.date() == selected_date]
-        return self.sort_by_time(tasks)
+        """Return the owner's tasks dated `today` (default: current date), sorted by time."""
+        today = today or date.today()
+        todays = [t for t in self.owner.get_all_tasks() if t.time.date() == today]
+        return self.sort_by_time(todays)
 
     def sort_by_time(self, tasks: Optional[list[Task]] = None) -> list[Task]:
-        """Sort by time. If no list is given, use all of the owner's tasks."""
-        tasks_to_sort = tasks if tasks is not None else self.owner.get_all_tasks()
-        return sorted(tasks_to_sort, key=lambda task: task.time)
+        """Sort tasks by start time; uses all of the owner's tasks if none are given."""
+        if tasks is None:
+            tasks = self.owner.get_all_tasks()
+        return sorted(tasks, key=lambda t: t.time)
+
+    def filter_tasks(
+        self, pet_name: Optional[str] = None, completed: Optional[bool] = None
+    ) -> list[Task]:
+        """Return tasks filtered by pet name and/or completion status, sorted by time."""
+        pets = [p for p in self.owner.pets if pet_name is None or p.name == pet_name]
+        tasks = [
+            t
+            for p in pets
+            for t in p.tasks
+            if completed is None or t.completed == completed
+        ]
+        return self.sort_by_time(tasks)
+
+    def mark_task_complete(self, task: Task) -> Optional[Task]:
+        """Mark a task done; for daily/weekly tasks, add and return the next occurrence."""
+        task.mark_complete()
+        step = {"daily": timedelta(days=1), "weekly": timedelta(weeks=1)}.get(
+            task.frequency
+        )
+        if step is None:
+            return None
+        next_task = replace(task, time=task.time + step, completed=False)
+        for pet in self.owner.pets:
+            if any(t is task for t in pet.tasks):
+                pet.add_task(next_task)
+                break
+        return next_task
 
     def find_conflicts(self) -> list[tuple[Task, Task]]:
-        """Return pairs of the owner's tasks whose time windows overlap."""
-        tasks = self.sort_by_time()
-        conflicts: list[tuple[Task, Task]] = []
-
-        for index, first_task in enumerate(tasks):
-            first_end = first_task.time + timedelta(minutes=first_task.duration_minutes)
-            for second_task in tasks[index + 1 :]:
-                if second_task.time >= first_end:
-                    break
-                second_end = second_task.time + timedelta(minutes=second_task.duration_minutes)
-                if first_task.time < second_end:
-                    conflicts.append((first_task, second_task))
-
+        """Return pairs of unfinished tasks whose time windows overlap."""
+        tasks = [t for t in self.sort_by_time() if not t.completed]
+        conflicts = []
+        for i, first in enumerate(tasks):
+            first_end = first.time + timedelta(minutes=first.duration_minutes)
+            for second in tasks[i + 1:]:
+                if second.time >= first_end:
+                    break  # sorted by start time, so no later task can overlap
+                conflicts.append((first, second))
         return conflicts
 
-    
+    def get_conflict_warnings(self) -> list[str]:
+        """Return a readable warning for each overlap instead of raising an error."""
+        return [
+            f"Conflict: {a.description} ({self.pet_name_for(a)}, {a.time:%I:%M %p}) "
+            f"overlaps {b.description} ({self.pet_name_for(b)}, {b.time:%I:%M %p})"
+            for a, b in self.find_conflicts()
+        ]

@@ -29,6 +29,9 @@ Three core actions a user should be able to perform:
 ---
 
 ## 2. Scheduling Logic and Tradeoffs
+- One tradeoff my scheduler makes is how it handles conflicts. find_conflicts() detects overlapping time windows (start time plus duration), which is more accurate than only checking for exact matching start times, but it only reports warnings. It does not block the user or reschedule anything. It also checks across all pets, because one owner has to do every task, but it ignores travel time or setup time between tasks. I kept this simple because a pet owner can fix a warning faster than an automatic reshuffle would, and a simpler algorithm is easier to read and trust.
+
+When the AI suggested a more readable version of find_conflicts(), I kept my version. It was already reasonably efficient b/c it sorts tasks once and stops checking later tasks when their start time is after the current task's end time.
 
 **a. Constraints and priorities**
 

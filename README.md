@@ -110,4 +110,12 @@ Conflicts detected:
   ! Breakfast (Buddy) overlaps Flea medication (Mochi)
 
   ```
-  
+
+
+## Smarter Scheduling
+
+- **Sorting:** `Scheduler.sort_by_time()` orders tasks by their start time using `sorted()` with a lambda key on the task's `datetime`
+- **Filtering:** `Scheduler.filter_tasks(pet_name=None, completed=None)` returns tasks for one pet, by completion status, or both. `Scheduler.get_todays_tasks()` returns only tasks dated today
+- **Conflict detection:** `Scheduler.find_conflicts()` finds unfinished tasks whose time windows (start time plus duration) overlap, across all pets. `Scheduler.get_conflict_warnings()` turns them into readable warning messages instead of raising errors
+- **Recurring tasks:** `Scheduler.mark_task_complete()` marks a task done and, for `daily` or `weekly` tasks, automatically adds the next occurrence (one day or one week later, same time) to the same pet
+
