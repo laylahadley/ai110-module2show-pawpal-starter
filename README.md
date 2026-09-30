@@ -67,8 +67,29 @@ pytest --cov
 Sample test output:
 
 ```
-# Paste your pytest output here
+# Paste your pytest output here --> 
+============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: C:\Users\404ro\ai110-module2show-pawpal-starter
+plugins: anyio-4.15.1
+collected 15 items
+
+tests\test_pawpal.py ...............                                     [100%]
+
+============================= 15 passed in 0.04s ==============================
 ```
+
+The test suite covers:
+- **Sorting:** tasks added out of order come back in chronological order
+- **Filtering:** by pet name and by completion status
+- **Recurring tasks:** completing a daily task creates one for the next day, a weekly task creates one a week later, and a one-time task creates nothing
+- **Conflict detection:** same start time and overlapping durations are flagged, back-to-back tasks are not, and completed tasks are ignored
+- **Edge cases:** pets with no tasks, and "today's tasks" excluding other days
+
+### Confidence Level: ★★★★☆ (4/5)
+
+All core behaviors (sorting, filtering, recurrence, and conflict detection) pass their tests, including key edge cases. I'm holding back a star because the Streamlit UI isn't covered by automated tests, recurring tasks are based on the original due date (so a task completed very late would schedule in the past), and I haven't tested duplicate pet names.
+
 
 ## 📐 Smarter Scheduling
 
@@ -118,4 +139,5 @@ Conflicts detected:
 - **Filtering:** `Scheduler.filter_tasks(pet_name=None, completed=None)` returns tasks for one pet, by completion status, or both. `Scheduler.get_todays_tasks()` returns only tasks dated today
 - **Conflict detection:** `Scheduler.find_conflicts()` finds unfinished tasks whose time windows (start time plus duration) overlap, across all pets. `Scheduler.get_conflict_warnings()` turns them into readable warning messages instead of raising errors
 - **Recurring tasks:** `Scheduler.mark_task_complete()` marks a task done and, for `daily` or `weekly` tasks, automatically adds the next occurrence (one day or one week later, same time) to the same pet
+
 
